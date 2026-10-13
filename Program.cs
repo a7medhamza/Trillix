@@ -1,41 +1,28 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
+using Trillix.Data;
+using Trillix.Modules.Catalog;
+using Trillix.Modules.Catalog.Storage;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi();   // keep whatever the template generated (Swagger/OpenAPI)
+
+builder.Services.AddDbContext<AppDbContext>(opt =>
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+
+var imagesPath = Path.Combine(builder.Environment.ContentRootPath,
+    builder.Configuration["Storage:ImagesPath"] ?? "uploads/products");
+builder.Services.AddSingleton<IImageStorage>(new LocalImageStorage(imagesPath));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+Directory.CreateDirectory(imagesPath);
+app.UseStaticFiles(new StaticFileOptions
 {
-    app.MapOpenApi();
-}
+    FileProvider = new PhysicalFileProvider(imagesPath),
+    RequestPath = "/media/products"
+});
 
-app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
-
+app.MapProductEndpoints();
 app.Run();
-
-internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
