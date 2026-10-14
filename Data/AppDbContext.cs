@@ -2,6 +2,7 @@
 using System.Reflection.Emit;
 using Trillix.Common;
 using Trillix.Modules.Catalog;
+using Trillix.Modules.Identity;
 
 namespace Trillix.Data
 {
@@ -10,11 +11,24 @@ namespace Trillix.Data
 
     public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
     {
+        public DbSet<Admins> Admins => Set<Admins>();
         public DbSet<Product> Products => Set<Product>();
         public DbSet<ProductImage> ProductImages => Set<ProductImage>();
+ 
 
         protected override void OnModelCreating(ModelBuilder b)
         {
+           
+
+        // inside OnModelCreating
+        b.Entity<Admins>(e =>
+{
+    e.Property(a => a.Email).HasMaxLength(256).IsRequired();
+        e.Property(a => a.FullName).HasMaxLength(200).IsRequired();
+        e.Property(a => a.PasswordHash).HasMaxLength(255).IsRequired();
+        e.HasIndex(a => a.Email).IsUnique();
+    });
+
             b.Entity<Product>(e =>
             {
                 e.Property(p => p.Name).HasMaxLength(200).IsRequired();
@@ -38,9 +52,11 @@ namespace Trillix.Data
 
         public override Task<int> SaveChangesAsync(CancellationToken ct = default)
         {
-            foreach (var entry in ChangeTracker.Entries<BaseEntity>())
+            foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
                 if (entry.State == EntityState.Modified)
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
+                else if (entry.State == EntityState.Added)
+                    entry.Entity.CreatedAt = DateTime.UtcNow;
 
             return base.SaveChangesAsync(ct);
         }

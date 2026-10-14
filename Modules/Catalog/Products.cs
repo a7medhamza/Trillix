@@ -3,7 +3,7 @@
 namespace Trillix.Modules.Catalog
 {
     // Modules/Catalog/Product.cs
-    public class Product : BaseEntity
+    public class Product : AuditableEntity
     {
         public string Name { get; set; } = "";
         public string Slug { get; set; } = "";

@@ -3,7 +3,7 @@
 namespace Trillix.Modules.Catalog
 {
     // Modules/Catalog/ProductImage.cs
-    public class ProductImage : BaseEntity
+    public class ProductImage : AuditableEntity
     {
         public Guid ProductId { get; set; }
         public Product Product { get; set; } = null!;
