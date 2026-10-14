@@ -177,4 +177,4 @@ You can test requests with the `Trillix.http` file in Visual Studio.
 
 ## Author
 
-**<Your name>**: [GitHub](https://github.com/<your-username>) · [LinkedIn](https://linkedin.com/in/<your-profile>)
+**<Your name>**: [GitHub](https://github.com/a7medhamza) · [LinkedIn](https://linkedin.com/in/ahmed-hamza-gouissem)
