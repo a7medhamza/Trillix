@@ -1,0 +1,98 @@
+/* Trillix global theme. Loaded last on every page, after DaisyUI. */
+:root[data-theme="trillix"] {
+  /* Typography */
+  --font-sans: "Manrope", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+
+  /* Surfaces and text */
+  --color-base-100: #FFFFFF;      /* cards, inputs */
+  --color-base-200: #F4F6F8;      /* page background */
+  --color-base-300: #E3E7EC;      /* borders, dividers */
+  --color-base-content: #0F172A;  /* main text */
+  --color-muted: #5B6675;         /* secondary text */
+  --color-input-border: #8A94A3;  /* form control borders (3:1 contrast) */
+
+  /* Brand */
+  --color-primary: #0F766E;
+  --color-primary-content: #FFFFFF;
+  --color-secondary: #475569;
+  --color-secondary-content: #FFFFFF;
+  --color-accent: #2DD4BF;
+  --color-accent-content: #0F172A;
+
+  /* Sidebar */
+  --color-neutral: #0F172A;
+  --color-neutral-content: #CBD5E1;
+
+  /* Status */
+  --color-info: #1D4ED8;
+  --color-info-content: #FFFFFF;
+  --color-success: #0B5B54;
+  --color-success-content: #FFFFFF;
+  --color-warning: #8A5300;
+  --color-warning-content: #FFFFFF;
+  --color-error: #B42318;
+  --color-error-content: #FFFFFF;
+
+  /* Shape and size */
+  --radius-selector: 999px;   /* badges, toggles */
+  --radius-field: 0.5rem;     /* inputs, buttons */
+  --radius-box: 0.75rem;      /* cards, modals */
+  --size-selector: 0.25rem;
+  --size-field: 0.275rem;     /* gives 44 px high controls */
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+
+  /* Layout */
+  --sidebar-width: 232px;
+  --page-padding: 2rem;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  margin: 0;
+}
+
+.text-muted { color: var(--color-muted); }
+
+.input, .textarea, .select, .file-input {
+  --input-color: var(--color-input-border);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  background: var(--color-base-200);
+  padding: var(--page-padding);
+}
+
+#sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+}
+
+.thumb-48 {
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-field);
+  object-fit: cover;
+  background: var(--color-base-200);
+}
+
+.drop-zone {
+  border: 2px dashed var(--color-base-300);
+  border-radius: var(--radius-box);
+  background: var(--color-base-200);
+}

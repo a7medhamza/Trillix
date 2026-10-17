@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en" data-theme="trillix">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base href="/Trillix/administration/" />
+  <title>Sign in | Trillix</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link href="../css/theme.css" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-base-200 flex items-center justify-center p-4">
+  <div class="card bg-base-100 border border-base-300 w-full max-w-md shadow-sm">
+    <div class="card-body gap-6">
+      <div class="text-center">
+        <div class="flex items-center justify-center gap-1.5 mb-2">
+          <span class="text-2xl font-extrabold tracking-tight">Trillix</span>
+          <span class="size-2 rounded-full bg-accent" aria-hidden="true"></span>
+        </div>
+        <p class="text-muted text-sm">Store administration</p>
+      </div>
+
+      <div id="login-error" role="alert" class="alert alert-error hidden">
+        <span>Invalid email or password.</span>
+      </div>
+
+      <form id="login-form" class="flex flex-col gap-4">
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Email</legend>
+          <input id="email" name="email" type="email" required autocomplete="username"
+            class="input validator w-full" placeholder="you@company.com" />
+          <p class="validator-hint hidden">Enter your email.</p>
+        </fieldset>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Password</legend>
+          <input id="password" name="password" type="password" required autocomplete="current-password"
+            class="input validator w-full" placeholder="••••••••••••" />
+          <p class="validator-hint hidden">Enter your password.</p>
+        </fieldset>
+        <button type="submit" id="login-btn" class="btn btn-primary w-full mt-2">
+          <span id="login-btn-label">Sign in</span>
+          <span id="login-spinner" class="loading loading-spinner loading-sm hidden"></span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script>
+    if (getToken()) location.href = 'products.html';
+
+    const form = document.getElementById('login-form');
+    const err = document.getElementById('login-error');
+    const btn = document.getElementById('login-btn');
+    const label = document.getElementById('login-btn-label');
+    const spinner = document.getElementById('login-spinner');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      err.classList.add('hidden');
+      btn.disabled = true;
+      label.classList.add('hidden');
+      spinner.classList.remove('hidden');
+
+      try {
+        const res = await fetch(ENDPOINTS.login, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+          }),
+        });
+        const text = await res.text();
+        let body;
+        try { body = JSON.parse(text); } catch { body = null; }
+        if (!res.ok) {
+          err.classList.remove('hidden');
+          return;
+        }
+        const token = body.token || body.accessToken;
+        setSessionTokens(token, body.refreshToken);
+        location.href = 'products.html';
+      } catch {
+        err.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        label.classList.remove('hidden');
+        spinner.classList.add('hidden');
+      }
+    });
+  </script>
+</body>
+</html>
