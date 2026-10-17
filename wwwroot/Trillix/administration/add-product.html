@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en" data-theme="trillix">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base href="/Trillix/administration/" />
+  <title>Add product | Trillix</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link href="../css/theme.css" rel="stylesheet">
+</head>
+<body>
+  <div class="app-shell">
+    <aside id="sidebar"></aside>
+    <main class="app-main">
+      <header class="mb-6">
+        <h1 id="page-title" class="text-3xl font-bold">Add product</h1>
+        <p class="text-muted text-sm mt-1">Create or update a catalog item.</p>
+      </header>
+
+      <div id="form-error" class="alert alert-error hidden mb-4" role="alert">
+        <span id="form-error-text"></span>
+      </div>
+
+      <div id="load-error" class="alert alert-error hidden mb-4" role="alert">
+        <span>Could not load this product.</span>
+        <a href="products.html" class="btn btn-sm btn-outline">Back to list</a>
+      </div>
+
+      <form id="product-form" class="grid grid-cols-1 lg:grid-cols-2 gap-6 hidden">
+        <div class="flex flex-col gap-6">
+          <div class="card bg-base-100 border border-base-300">
+            <div class="card-body gap-4">
+              <h2 class="text-base font-bold">Basic information</h2>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Name</legend>
+                <input id="name" required maxlength="200" class="input validator w-full" />
+                <p id="err-name" class="validator-hint hidden"></p>
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Slug</legend>
+                <label class="input w-full flex items-center gap-2">
+                  <span class="label text-muted shrink-0">/products/</span>
+                  <input id="slug" readonly class="grow bg-base-200" tabindex="-1" aria-readonly="true" />
+                </label>
+                <p class="label text-muted">Generated from the name. The server confirms uniqueness on save.</p>
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">SKU</legend>
+                <label class="input w-full flex items-center gap-2">
+                  <svg aria-hidden="true" class="size-5 text-muted shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/></svg>
+                  <input id="sku" required maxlength="50" class="grow validator" />
+                </label>
+                <p class="label text-muted">Internal stock code. Must be unique.</p>
+                <p id="err-sku" class="validator-hint hidden"></p>
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Description</legend>
+                <textarea id="description" class="textarea w-full h-28"></textarea>
+              </fieldset>
+            </div>
+          </div>
+
+          <div class="card bg-base-100 border border-base-300">
+            <div class="card-body gap-4">
+              <h2 class="text-base font-bold">Pricing and inventory</h2>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Price</legend>
+                <label class="input w-full flex items-center gap-2">
+                  <span class="label">$</span>
+                  <input id="price" type="number" step="0.01" min="0" required class="grow validator" />
+                </label>
+                <p id="err-price" class="validator-hint hidden"></p>
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Stock quantity</legend>
+                <label class="input w-full flex items-center gap-2">
+                  <input id="stock" type="number" step="1" min="0" required class="grow validator" value="0" />
+                  <span class="label text-muted">units</span>
+                </label>
+                <p id="err-stock" class="validator-hint hidden"></p>
+              </fieldset>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-6">
+          <div class="card bg-base-100 border border-base-300">
+            <div class="card-body gap-4">
+              <h2 class="text-base font-bold">Images</h2>
+              <div id="drop-zone" class="drop-zone p-8 text-center cursor-pointer">
+                <p class="font-semibold">Drag images here</p>
+                <p class="text-sm text-muted mt-1">JPG, PNG or WEBP, up to 5 MB each</p>
+              </div>
+              <input id="file-input" type="file" accept=".jpg,.jpeg,.png,.webp" multiple class="file-input w-full" />
+              <div id="image-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+              <p class="label text-muted">The first image is the primary one.</p>
+            </div>
+          </div>
+
+          <div class="card bg-base-100 border border-base-300">
+            <div class="card-body gap-4">
+              <h2 class="text-base font-bold">Status</h2>
+              <label class="label cursor-pointer justify-start gap-3">
+                <input id="is-active" type="checkbox" class="toggle toggle-primary" checked />
+                <span>Active (visible in the store)</span>
+              </label>
+            </div>
+          </div>
+
+          <div id="danger-card" class="card bg-base-100 border border-base-300 hidden">
+            <div class="card-body gap-4">
+              <h2 class="text-base font-bold text-error">Danger zone</h2>
+              <label class="label cursor-pointer justify-start gap-3">
+                <input id="is-deleted" type="checkbox" class="toggle toggle-error" />
+                <span>Deleted</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-2 flex flex-col sm:flex-row justify-end gap-3 pt-2">
+          <a href="products.html" class="btn btn-outline">Cancel</a>
+          <button type="submit" id="save-btn" class="btn btn-primary">
+            <span id="save-label">Save product</span>
+            <span id="save-spinner" class="loading loading-spinner loading-sm hidden"></span>
+          </button>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <div id="toast-host"></div>
+  <dialog id="confirm-modal" class="modal">
+    <div class="modal-box">
+      <h3 id="confirm-title" class="text-lg font-bold"></h3>
+      <p id="confirm-message" class="py-4 text-muted"></p>
+      <div class="modal-action">
+        <button type="button" id="confirm-cancel" class="btn btn-outline">Cancel</button>
+        <button type="button" id="confirm-ok" class="btn btn-primary">Confirm</button>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button aria-label="Close dialog">close</button></form>
+  </dialog>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/layout.js"></script>
+  <script>
+    requireAuth();
+
+    const params = new URLSearchParams(location.search);
+    const editId = params.get('id');
+    const isEdit = Boolean(editId);
+
+    const form = document.getElementById('product-form');
+    const saveBtn = document.getElementById('save-btn');
+    const saveLabel = document.getElementById('save-label');
+    const saveSpinner = document.getElementById('save-spinner');
+
+    let pendingImages = [];
+    let existingImages = [];
+
+    document.getElementById('page-title').textContent = isEdit ? 'Edit product' : 'Add product';
+    if (isEdit) document.getElementById('danger-card').classList.remove('hidden');
+
+    document.getElementById('name').addEventListener('input', (e) => {
+      document.getElementById('slug').value = slugify(e.target.value);
+    });
+
+    document.getElementById('is-deleted').addEventListener('change', async (e) => {
+      if (!e.target.checked) return;
+      const ok = await showConfirm({
+        title: 'Mark as deleted',
+        message: 'This product will be hidden from the storefront. Continue?',
+        confirmLabel: 'Mark deleted',
+        danger: true,
+      });
+      if (!ok) e.target.checked = false;
+    });
+
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('ring-2', 'ring-primary'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('ring-2', 'ring-primary'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('ring-2', 'ring-primary');
+      addFiles(e.dataTransfer.files);
+    });
+    fileInput.addEventListener('change', () => {
+      addFiles(fileInput.files);
+      fileInput.value = '';
+    });
+
+    function addFiles(fileList) {
+      for (const file of fileList) {
+        const err = validateImage(file);
+        if (err) {
+          showToast(err, 'error');
+          continue;
+        }
+        pendingImages.push({
+          file,
+          status: 'pending',
+          key: crypto.randomUUID(),
+        });
+      }
+      renderImageGrid();
+    }
+
+    function validateImage(file) {
+      const ok = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!ok.includes(file.type)) return file.name + ': use JPG, PNG or WEBP.';
+      if (file.size > 5 * 1024 * 1024) return file.name + ': max 5 MB.';
+      return null;
+    }
+
+    function renderImageGrid() {
+      const grid = document.getElementById('image-grid');
+      const items = [];
+
+      existingImages.forEach((img, i) => {
+        items.push(
+          '<div class="relative border border-base-300 rounded-field overflow-hidden">' +
+          '<img class="w-full aspect-square object-cover" src="/media/products/' + escapeHtml(img.fileName) + '" alt="" />' +
+          (img.isPrimary || i === 0 ? '<span class="badge badge-primary badge-sm absolute top-2 left-2">Primary</span>' : '') +
+          '</div>'
+        );
+      });
+
+      pendingImages.forEach((item, index) => {
+        const url = URL.createObjectURL(item.file);
+        const primary = !existingImages.length && index === 0;
+        let status = '';
+        if (item.status === 'uploading') status = '<span class="loading loading-spinner loading-sm"></span>';
+        if (item.status === 'error') {
+          status =
+            '<p class="text-xs text-error mt-1">' + escapeHtml(item.error || 'Failed') + '</p>' +
+            '<button type="button" class="btn btn-ghost btn-xs mt-1" data-retry="' + item.key + '">Retry</button>';
+        }
+        items.push(
+          '<div class="relative border border-base-300 rounded-field overflow-hidden p-1">' +
+          '<img class="w-full aspect-square object-cover rounded" src="' + url + '" alt="" />' +
+          (primary ? '<span class="badge badge-primary badge-sm absolute top-2 left-2">Primary</span>' : '') +
+          status +
+          '</div>'
+        );
+      });
+
+      grid.innerHTML = items.join('');
+      grid.querySelectorAll('[data-retry]').forEach((btn) => {
+        btn.addEventListener('click', () => retryUpload(btn.dataset.retry));
+      });
+    }
+
+    function clearFieldErrors() {
+      ['name', 'sku', 'price', 'stock'].forEach((f) => fieldError(f, ''));
+      document.getElementById('form-error').classList.add('hidden');
+    }
+
+    function validateForm() {
+      clearFieldErrors();
+      let ok = true;
+      if (!document.getElementById('name').value.trim()) {
+        fieldError('name', 'Name is required.');
+        ok = false;
+      }
+      if (!document.getElementById('sku').value.trim()) {
+        fieldError('sku', 'SKU is required.');
+        ok = false;
+      }
+      const price = parseFloat(document.getElementById('price').value);
+      if (Number.isNaN(price) || price < 0) {
+        fieldError('price', 'Enter a valid price.');
+        ok = false;
+      }
+      const stock = parseInt(document.getElementById('stock').value, 10);
+      if (Number.isNaN(stock) || stock < 0) {
+        fieldError('stock', 'Enter a valid stock quantity.');
+        ok = false;
+      }
+      return ok;
+    }
+
+    function buildPayload() {
+      return {
+        name: document.getElementById('name').value.trim(),
+        slug: document.getElementById('slug').value.trim(),
+        description: document.getElementById('description').value.trim() || null,
+        sku: document.getElementById('sku').value.trim(),
+        price: parseFloat(document.getElementById('price').value),
+        stockQuantity: parseInt(document.getElementById('stock').value, 10) || 0,
+        isActive: document.getElementById('is-active').checked,
+        isDeleted: document.getElementById('is-deleted').checked,
+      };
+    }
+
+    async function saveProduct() {
+      const full = buildPayload();
+      if (isEdit) {
+        await api(ENDPOINTS.product(editId), {
+          method: 'PUT',
+          body: JSON.stringify({
+            name: full.name,
+            slug: full.slug,
+            description: full.description,
+            sku: full.sku,
+            isActive: full.isActive,
+            isDeleted: full.isDeleted,
+          }),
+        });
+        await api(ENDPOINTS.productInventory(editId), {
+          method: 'PATCH',
+          body: JSON.stringify({
+            price: full.price,
+            stockQuantity: full.stockQuantity,
+          }),
+        });
+        return { id: editId };
+      }
+      return api(ENDPOINTS.products, {
+        method: 'POST',
+        body: JSON.stringify({
+          name: full.name,
+          description: full.description,
+          sku: full.sku,
+          price: full.price,
+          stockQuantity: full.stockQuantity,
+        }),
+      });
+    }
+
+    async function uploadPending(productId) {
+      const queue = pendingImages.filter((p) => p.status === 'pending' || p.status === 'error');
+      for (const item of queue) {
+        item.status = 'uploading';
+        item.error = undefined;
+        renderImageGrid();
+        const fd = new FormData();
+        fd.append('file', item.file);
+        try {
+          await apiForm(ENDPOINTS.productImages(productId), fd);
+          item.status = 'done';
+        } catch (e) {
+          item.status = 'error';
+          item.error =
+            typeof e.body === 'string' ? e.body : 'Upload failed';
+        }
+        renderImageGrid();
+      }
+      return pendingImages.some((p) => p.status === 'error');
+    }
+
+    let savedProductId = editId;
+
+    async function retryUpload(key) {
+      const item = pendingImages.find((p) => p.key === key);
+      const pid = savedProductId || editId;
+      if (!item || !pid) return;
+      item.status = 'pending';
+      const failed = await uploadPending(pid);
+      if (!failed) showToast('Image uploaded.', 'success');
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!validateForm()) return;
+
+      saveBtn.disabled = true;
+      saveLabel.classList.add('hidden');
+      saveSpinner.classList.remove('hidden');
+
+      try {
+        const saved = await saveProduct();
+        savedProductId = saved.id || editId;
+
+        const hadUploadErrors = pendingImages.length
+          ? await uploadPending(savedProductId)
+          : false;
+
+        if (hadUploadErrors) {
+          showToast('Product saved. Some images failed — use Retry.', 'error');
+          if (!isEdit) {
+            history.replaceState(null, '', 'add-product.html?id=' + savedProductId);
+          }
+          return;
+        }
+
+        showToast('Product saved.', 'success');
+        setTimeout(() => { location.href = 'products.html'; }, 600);
+      } catch (e) {
+        const msg =
+          typeof e.body === 'string' ? e.body : 'Could not save product.';
+        document.getElementById('form-error-text').textContent = msg;
+        document.getElementById('form-error').classList.remove('hidden');
+      } finally {
+        saveBtn.disabled = false;
+        saveLabel.classList.remove('hidden');
+        saveSpinner.classList.add('hidden');
+      }
+    });
+
+    async function loadProduct() {
+      if (!isEdit) {
+        form.classList.remove('hidden');
+        return;
+      }
+      try {
+        const p = await api(ENDPOINTS.product(editId));
+        document.getElementById('name').value = p.name || '';
+        document.getElementById('slug').value = p.slug || '';
+        document.getElementById('sku').value = p.sku || '';
+        document.getElementById('description').value = p.description || '';
+        document.getElementById('price').value = p.price;
+        document.getElementById('stock').value = p.stockQuantity;
+        document.getElementById('is-active').checked = p.isActive !== false;
+        document.getElementById('is-deleted').checked = p.isDeleted === true;
+        existingImages = (p.images || []).sort((a, b) => a.sortOrder - b.sortOrder);
+        form.classList.remove('hidden');
+        renderImageGrid();
+      } catch {
+        document.getElementById('load-error').classList.remove('hidden');
+      }
+    }
+
+    loadProduct();
+  </script>
+</body>
+</html>

@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en" data-theme="trillix">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base href="/Trillix/administration/" />
+  <title>Products | Trillix</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link href="../css/theme.css" rel="stylesheet">
+</head>
+<body>
+  <div class="app-shell">
+    <aside id="sidebar"></aside>
+    <main class="app-main">
+      <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <h1 class="text-3xl font-bold">Products</h1>
+        <a href="add-product.html" class="btn btn-primary">+ Add product</a>
+      </header>
+
+      <div class="card bg-base-100 border border-base-300">
+        <div class="card-body gap-4">
+          <div class="flex flex-col sm:flex-row gap-3">
+            <label class="input flex items-center gap-2 flex-1">
+              <svg aria-hidden="true" class="size-5 text-muted shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z"/></svg>
+              <input id="search" type="search" class="grow" placeholder="Search by name or SKU" />
+            </label>
+            <select id="status-filter" class="select w-full sm:w-48">
+              <option value="all">All statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+
+          <div id="list-error" class="alert alert-error hidden" role="alert">
+            <span id="list-error-text">Could not load products.</span>
+            <button type="button" id="retry-btn" class="btn btn-sm btn-outline">Retry</button>
+          </div>
+
+          <div id="loading" class="flex justify-center py-16">
+            <span class="loading loading-spinner loading-lg text-primary"></span>
+          </div>
+
+          <div id="empty" class="hidden text-center py-16">
+            <p class="text-muted mb-4">No products match your filters.</p>
+            <a href="add-product.html" class="btn btn-primary">+ Add product</a>
+          </div>
+
+          <div id="table-wrap" class="overflow-x-auto hidden">
+            <table class="table">
+              <thead>
+                <tr class="text-muted text-xs uppercase">
+                  <th scope="col"></th>
+                  <th scope="col">Product</th>
+                  <th scope="col" class="text-right">Price</th>
+                  <th scope="col" class="text-right">Stock</th>
+                  <th scope="col">Status</th>
+                  <th scope="col" class="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="product-rows"></tbody>
+            </table>
+          </div>
+
+          <p id="footer-count" class="text-sm text-muted hidden"></p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-host"></div>
+  <dialog id="confirm-modal" class="modal">
+    <div class="modal-box">
+      <h3 id="confirm-title" class="text-lg font-bold"></h3>
+      <p id="confirm-message" class="py-4 text-muted"></p>
+      <div class="modal-action">
+        <button type="button" id="confirm-cancel" class="btn btn-outline">Cancel</button>
+        <button type="button" id="confirm-ok" class="btn btn-primary">Confirm</button>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button aria-label="Close dialog">close</button></form>
+  </dialog>
+
+  <dialog id="inventory-modal" class="modal">
+    <div class="modal-box max-w-md">
+      <h3 class="text-lg font-bold">Update price &amp; stock</h3>
+      <p id="inventory-product-name" class="text-sm text-muted mt-1"></p>
+      <form id="inventory-form" class="flex flex-col gap-4 mt-4">
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Price</legend>
+          <label class="input w-full flex items-center gap-2">
+            <span class="label">$</span>
+            <input id="inv-price" type="number" step="0.01" min="0" required class="grow validator" />
+          </label>
+        </fieldset>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Stock quantity</legend>
+          <label class="input w-full flex items-center gap-2">
+            <input id="inv-stock" type="number" step="1" min="0" required class="grow validator" />
+            <span class="label text-muted">units</span>
+          </label>
+        </fieldset>
+        <div class="modal-action px-0">
+          <button type="button" id="inventory-cancel" class="btn btn-outline">Cancel</button>
+          <button type="submit" id="inventory-save" class="btn btn-primary">
+            <span id="inventory-save-label">Save</span>
+            <span id="inventory-spinner" class="loading loading-spinner loading-sm hidden"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button aria-label="Close dialog">close</button></form>
+  </dialog>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/layout.js"></script>
+  <script>
+    requireAuth();
+
+    const PLACEHOLDER_IMG =
+      '<div class="thumb-48 flex items-center justify-center border border-base-300">' +
+      '<svg aria-hidden="true" class="size-6 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>';
+
+    let allProducts = [];
+
+    const loading = document.getElementById('loading');
+    const tableWrap = document.getElementById('table-wrap');
+    const empty = document.getElementById('empty');
+    const listError = document.getElementById('list-error');
+    const tbody = document.getElementById('product-rows');
+    const footer = document.getElementById('footer-count');
+
+    function primaryImage(product) {
+      const images = product.images || [];
+      const img = images.find((i) => i.isPrimary) || images[0];
+      if (!img?.fileName) return PLACEHOLDER_IMG;
+      return (
+        '<img class="thumb-48 border border-base-300" src="/media/products/' +
+        escapeHtml(img.fileName) +
+        '" alt="" />'
+      );
+    }
+
+    function stockBadge(qty) {
+      if (qty === 0) return '<span class="badge badge-soft badge-error">Out of stock</span>';
+      if (qty < 10) return '<span class="badge badge-soft badge-warning">Low stock</span>';
+      return '<span class="text-muted">' + qty + '</span>';
+    }
+
+    function statusBadge(active) {
+      return active
+        ? '<span class="badge badge-soft badge-success">Active</span>'
+        : '<span class="badge badge-soft badge-neutral">Inactive</span>';
+    }
+
+    function renderRows(products) {
+      tbody.innerHTML = products
+        .map(
+          (p) =>
+            '<tr>' +
+            '<td>' + primaryImage(p) + '</td>' +
+            '<td><div class="font-semibold">' + escapeHtml(p.name) + '</div>' +
+            '<div class="text-sm text-muted">' + escapeHtml(p.sku) + '</div></td>' +
+            '<td class="text-right whitespace-nowrap">' + formatCurrency(p.price) + '</td>' +
+            '<td class="text-right">' + stockBadge(p.stockQuantity) + '</td>' +
+            '<td>' + statusBadge(p.isActive) + '</td>' +
+            '<td class="text-right">' +
+            '<details class="dropdown dropdown-end inline-block">' +
+            '<summary class="btn btn-ghost btn-sm" aria-label="Actions for ' + escapeHtml(p.name) + '">⋯</summary>' +
+            '<ul class="dropdown-content menu bg-base-100 border border-base-300 rounded-box z-10 w-52 p-2 shadow-lg">' +
+            '<li><a href="add-product.html?id=' + p.id + '">Edit product</a></li>' +
+            '<li><button type="button" data-delete="' + p.id + '" class="text-error">Delete product</button></li>' +
+            '<li><button type="button" data-inventory="' + p.id + '">Update price &amp; stock</button></li>' +
+            '</ul></details></td></tr>'
+        )
+        .join('');
+
+      tbody.querySelectorAll('[data-delete]').forEach((btn) => {
+        btn.addEventListener('click', () => deleteProduct(btn.dataset.delete));
+      });
+      tbody.querySelectorAll('[data-inventory]').forEach((btn) => {
+        btn.addEventListener('click', () => openInventoryModal(btn.dataset.inventory));
+      });
+    }
+
+    function applyFilters() {
+      const q = document.getElementById('search').value.trim().toLowerCase();
+      const status = document.getElementById('status-filter').value;
+      let list = allProducts;
+      if (q) {
+        list = list.filter(
+          (p) =>
+            p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)
+        );
+      }
+      if (status === 'active') list = list.filter((p) => p.isActive);
+      if (status === 'inactive') list = list.filter((p) => !p.isActive);
+
+      tableWrap.classList.add('hidden');
+      empty.classList.add('hidden');
+      footer.classList.add('hidden');
+
+      if (!list.length) {
+        empty.classList.remove('hidden');
+        return;
+      }
+      tableWrap.classList.remove('hidden');
+      footer.classList.remove('hidden');
+      footer.textContent = 'Showing ' + list.length + ' product' + (list.length === 1 ? '' : 's');
+      renderRows(list);
+    }
+
+    async function loadProducts() {
+      loading.classList.remove('hidden');
+      tableWrap.classList.add('hidden');
+      empty.classList.add('hidden');
+      listError.classList.add('hidden');
+
+      try {
+        const data = await api(ENDPOINTS.products);
+        allProducts = (Array.isArray(data) ? data : []).map((p) => ({
+          ...p,
+          images: p.images || [],
+        }));
+        loading.classList.add('hidden');
+        if (!allProducts.length) {
+          empty.classList.remove('hidden');
+          empty.querySelector('p').textContent = 'No products yet.';
+          return;
+        }
+        applyFilters();
+      } catch (e) {
+        loading.classList.add('hidden');
+        listError.classList.remove('hidden');
+        document.getElementById('list-error-text').textContent =
+          typeof e.body === 'string' ? e.body : 'Could not load products.';
+      }
+    }
+
+    async function deleteProduct(id) {
+      const product = allProducts.find((p) => p.id === id);
+      const ok = await showConfirm({
+        title: 'Delete product',
+        message: 'Delete “' + (product?.name || 'this product') + '”? This cannot be undone.',
+        confirmLabel: 'Delete',
+        danger: true,
+      });
+      if (!ok) return;
+      try {
+        await api(ENDPOINTS.product(id), { method: 'DELETE' });
+        showToast('Product deleted.', 'success');
+        await loadProducts();
+      } catch {
+        showToast('Delete failed.', 'error');
+      }
+    }
+
+    const inventoryModal = document.getElementById('inventory-modal');
+    let inventoryProductId = null;
+
+    function openInventoryModal(id) {
+      const product = allProducts.find((p) => p.id === id);
+      if (!product) return;
+      inventoryProductId = id;
+      document.getElementById('inventory-product-name').textContent = product.name;
+      document.getElementById('inv-price').value = product.price;
+      document.getElementById('inv-stock').value = product.stockQuantity;
+      inventoryModal.showModal();
+    }
+
+    document.getElementById('inventory-cancel').addEventListener('click', () => {
+      inventoryModal.close();
+    });
+
+    document.getElementById('inventory-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!inventoryProductId) return;
+      const saveBtn = document.getElementById('inventory-save');
+      const label = document.getElementById('inventory-save-label');
+      const spinner = document.getElementById('inventory-spinner');
+      saveBtn.disabled = true;
+      label.classList.add('hidden');
+      spinner.classList.remove('hidden');
+      try {
+        await api(ENDPOINTS.productInventory(inventoryProductId), {
+          method: 'PATCH',
+          body: JSON.stringify({
+            price: parseFloat(document.getElementById('inv-price').value),
+            stockQuantity: parseInt(document.getElementById('inv-stock').value, 10) || 0,
+          }),
+        });
+        inventoryModal.close();
+        showToast('Price and stock updated.', 'success');
+        await loadProducts();
+      } catch (err) {
+        showToast(typeof err.body === 'string' ? err.body : 'Update failed.', 'error');
+      } finally {
+        saveBtn.disabled = false;
+        label.classList.remove('hidden');
+        spinner.classList.add('hidden');
+      }
+    });
+
+    document.getElementById('search').addEventListener('input', applyFilters);
+    document.getElementById('status-filter').addEventListener('change', applyFilters);
+    document.getElementById('retry-btn').addEventListener('click', loadProducts);
+    loadProducts();
+  </script>
+</body>
+</html>

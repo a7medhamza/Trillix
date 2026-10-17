@@ -19,6 +19,8 @@ builder.Services.AddTrillixIdentity(builder.Configuration);
 var app = builder.Build();
 
 Directory.CreateDirectory(imagesPath);
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(imagesPath),
