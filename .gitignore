@@ -365,3 +365,4 @@ appsettings.Development.json
 .agents/
 .cursor/
 uploads/
+skills-lock.json
