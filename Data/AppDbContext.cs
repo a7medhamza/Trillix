@@ -12,6 +12,7 @@ namespace Trillix.Data
     public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
     {
         public DbSet<Admins> Admins => Set<Admins>();
+        public DbSet<AdminRefreshToken> AdminRefreshTokens => Set<AdminRefreshToken>();
         public DbSet<Product> Products => Set<Product>();
         public DbSet<ProductImage> ProductImages => Set<ProductImage>();
  
@@ -28,6 +29,15 @@ namespace Trillix.Data
         e.Property(a => a.PasswordHash).HasMaxLength(255).IsRequired();
         e.HasIndex(a => a.Email).IsUnique();
     });
+
+            b.Entity<AdminRefreshToken>(e =>
+            {
+                e.Property(t => t.TokenHash).HasMaxLength(64).IsRequired();
+                e.HasIndex(t => t.TokenHash);
+                e.HasOne(t => t.Admin).WithMany()
+                    .HasForeignKey(t => t.AdminId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
             b.Entity<Product>(e =>
             {
